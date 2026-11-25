@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cào dữ liệu Laptop - Mũi Cà Mau</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 0 16px;
+      background: #f8fafc;
+      color: #1e293b;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      margin-bottom: 18px;
+    }
+    h1 { font-size: 21px; margin: 0 0 6px; }
+    .sub { color: #64748b; font-size: 13px; margin-bottom: 16px; }
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; }
+    button {
+      padding: 10px 16px; border: 0; border-radius: 7px;
+      font-size: 14px; font-weight: 650; cursor: pointer;
+      background: #2563eb; color: #fff;
+    }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: not-allowed; }
+    button.secondary { background: #059669; }
+    button.secondary:hover { background: #047857; }
+    #status { margin-top: 13px; font-size: 14px; color: #475569; }
+    .progress { height: 7px; background: #e2e8f0; border-radius: 20px; overflow: hidden; margin-top: 10px; }
+    #progressBar { height: 100%; width: 0; background: #2563eb; transition: width .2s; }
+    .stats { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .stat { background: #f1f5f9; border-radius: 8px; padding: 9px 13px; font-size: 13px; }
+    .stat strong { font-size: 17px; display: block; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; background: #fff; font-size: 14px; min-width: 650px; }
+    th, td { padding: 11px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
+    th { background: #f1f5f9; font-weight: 650; white-space: nowrap; }
+    img.thumb { width: 64px; height: 64px; object-fit: contain; border-radius: 5px; background: #fff; }
+    .price { font-weight: 700; color: #dc2626; white-space: nowrap; }
+    a { color: #2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .muted { color: #64748b; }
+    @media (max-width: 600px) {
+      body { margin: 14px auto; padding: 0 10px; }
+      .card { padding: 15px; }
+      h1 { font-size: 18px; }
+      .controls button { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <section class="card">
+    <h1>Lấy danh sách Laptop từ Mũi Cà Mau</h1>
+    <div class="sub">Tự động quét các trang danh mục và xuất danh sách ra Excel.</div>
+    <div class="controls">
+      <button id="btnCrawl" onclick="crawlData()">Lấy toàn bộ dữ liệu</button>
+      <button id="btnExport" class="secondary" onclick="exportExcel()" disabled>Xuất Excel (.xlsx)</button>
+    </div>
+    <div id="status">Sẵn sàng. Nhấn “Lấy toàn bộ dữ liệu” để bắt đầu.</div>
+    <div class="progress"><div id="progressBar"></div></div>
+    <div class="stats">
+      <div class="stat"><strong id="productCount">0</strong>Sản phẩm</div>
+      <div class="stat"><strong id="pageCount">0</strong>Trang đã quét</div>
+    </div>
+  </section>
+
+  <section class="card" style="padding:0; overflow:hidden;">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:55px;">STT</th>
+            <th style="width:90px;">Hình ảnh</th>
+            <th>Tên sản phẩm</th>
+            <th style="width:160px;">Giá bán</th>
+            <th style="width:100px;">Liên kết</th>
+          </tr>
+        </thead>
+        <tbody id="resultBody">
+          <tr><td colspan="5" class="muted" style="text-align:center;padding:28px;">Chưa có dữ liệu</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+<script>
+  const API_URL = "/api/laptops";
+  let scrapedProducts = [];
+  let scannedPages = 0;
+
+  async function crawlData() {
+    const btn = document.getElementById("btnCrawl");
+    const exportBtn = document.getElementById("btnExport");
+    const status = document.getElementById("status");
+    const tbody = document.getElementById("resultBody");
+
+    btn.disabled = true;
+    exportBtn.disabled = true;
+    scrapedProducts = [];
+    scannedPages = 0;
+    updateStats();
+    setProgress(10);
+    status.textContent = "Đang kết nối máy chủ và quét danh mục Laptop...";
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:28px;">Đang tải dữ liệu...</td></tr>';
+
+    try {
+      const response = await fetch(API_URL, { method: "GET", cache: "no-store" });
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(result.error || `Máy chủ trả về HTTP ${response.status}`);
+      }
+
+      scrapedProducts = Array.isArray(result.products) ? result.products : [];
+      scannedPages = Number(result.pagesScanned || 0);
+      renderTable(scrapedProducts);
+      updateStats();
+      setProgress(100);
+
+      if (scrapedProducts.length) {
+        status.textContent = `Hoàn tất! Đã lấy ${scrapedProducts.length} sản phẩm từ ${scannedPages} trang.`;
+        exportBtn.disabled = false;
+      } else {
+        status.textContent = "Không tìm thấy sản phẩm. Cấu trúc danh mục có thể đã thay đổi.";
+      }
+    } catch (error) {
+      console.error(error);
+      status.textContent = "Lỗi khi lấy dữ liệu: " + error.message;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#dc2626;padding:28px;">${escapeHtml(error.message)}</td></tr>`;
+      setProgress(0);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function updateStats() {
+    document.getElementById("productCount").textContent = scrapedProducts.length;
+    document.getElementById("pageCount").textContent = scannedPages;
+  }
+
+  function setProgress(value) {
+    document.getElementById("progressBar").style.width = `${value}%`;
+  }
+
+  function renderTable(items) {
+    const tbody = document.getElementById("resultBody");
+    if (!items.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:28px;">Không có sản phẩm</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = items.map((item, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${item.image ? `<img class="thumb" src="${escapeAttribute(item.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : "—"}</td>
+        <td><strong>${escapeHtml(item.name)}</strong></td>
+        <td class="price">${escapeHtml(item.price || "Liên hệ")}</td>
+        <td>${item.link ? `<a href="${escapeAttribute(item.link)}" target="_blank" rel="noopener noreferrer">Xem web</a>` : "—"}</td>
+      </tr>
+    `).join("");
+  }
+
+  function exportExcel() {
+    if (!scrapedProducts.length) return;
+    if (typeof XLSX === "undefined") {
+      alert("Không tải được thư viện Excel. Vui lòng kiểm tra kết nối Internet và tải lại trang.");
+      return;
+    }
+
+    const rows = scrapedProducts.map((p, index) => ({
+      "STT": index + 1,
+      "Tên sản phẩm": p.name,
+      "Giá bán": p.price || "Liên hệ",
+      "Liên kết": p.link,
+      "Hình ảnh": p.image
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    worksheet["!cols"] = [
+      { wch: 8 }, { wch: 65 }, { wch: 22 }, { wch: 55 }, { wch: 65 }
+    ];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Danh sách Laptop");
+    XLSX.writeFile(workbook, "danh-sach-laptop-muicamau.xlsx");
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[char]);
+  }
+
+  function escapeAttribute(value) {
+    return escapeHtml(value);
+  }
+</script>
+</body>
+</html>

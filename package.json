@@ -1,0 +1,9 @@
+{
+  "name": "mcm-laptop-crawler",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Công cụ lấy danh sách Laptop từ muicamau.vn",
+  "dependencies": {
+    "cheerio": "^1.0.0"
+  }
+}
