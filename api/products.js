@@ -92,40 +92,62 @@ async function fetchHtml(url) {
 
 // Tìm vùng chứa sản phẩm.
 // Ưu tiên phần tử có cả hình ảnh và thông tin giá.
+
 function getProductCard($, anchor) {
-  let node = $(anchor);
-  let bestNode = node;
-  let bestScore = -1;
+  const a = $(anchor);
+
+  // Ưu tiên tìm đúng thẻ sản phẩm của WooCommerce.
+  const cardSelectors = [
+    "li.product",
+    ".product-small",
+    ".product-item",
+    "article.product",
+    ".type-product",
+    ".product"
+  ];
+
+  for (const selector of cardSelectors) {
+    const card = a.closest(selector);
+
+    if (
+      card.length &&
+      card.find("img").length > 0
+    ) {
+      return card.first();
+    }
+  }
+
+  // Dự phòng: tìm phần tử cha gần nhất có ảnh và thông tin sản phẩm.
+  let node = a.parent();
 
   for (let i = 0; i < 8 && node.length; i++) {
     const hasImage = node.find("img").length > 0;
-    const hasPrice = node.find(
-      ".price, .woocommerce-Price-amount, .amount"
+
+    const hasProductInfo = node.find(
+      ".price, .woocommerce-Price-amount, " +
+      ".woocommerce-loop-product__title, h2, h3"
     ).length > 0;
 
-    const hasTitle = node.find(
-      ".woocommerce-loop-product__title, .product-title, h2, h3"
-    ).length > 0;
+    const productLinks = node.find(
+      'a[href*="/san-pham/"]'
+    ).length;
 
-    const score =
-      (hasImage ? 2 : 0) +
-      (hasPrice ? 3 : 0) +
-      (hasTitle ? 1 : 0);
-
-    if (score > bestScore) {
-      bestScore = score;
-      bestNode = node;
-    }
-
-    if (hasImage && hasPrice && hasTitle) {
+    if (
+      hasImage &&
+      hasProductInfo &&
+      productLinks <= 4
+    ) {
       return node;
     }
 
     node = node.parent();
   }
 
-  return bestNode;
+  // Không lấy vùng chứa chung của toàn bộ danh sách.
+  return a.parent();
 }
+
+
 
 function getProductFromLink($, anchor, pageUrl, category) {
   const a = $(anchor);
@@ -144,10 +166,18 @@ function getProductFromLink($, anchor, pageUrl, category) {
   }
 
   const card = getProductCard($, anchor);
-  const img = card.find("img").first();
 
+  // Tìm ảnh thuộc chính sản phẩm này.
+  let img = a.find("img").first();
+
+  if (!img.length) {
+    img = card.find("img").first();
+  }
+
+  // Lấy tên sản phẩm.
   const titleElement = card.find(
-    ".woocommerce-loop-product__title, .product-title, h2, h3"
+    ".woocommerce-loop-product__title, " +
+    ".product-title, h2, h3"
   ).first();
 
   const name = cleanText(
@@ -157,17 +187,36 @@ function getProductFromLink($, anchor, pageUrl, category) {
     a.text()
   );
 
-  if (!name || name.length < 3) return null;
+  if (!name || name.length < 3) {
+    return null;
+  }
 
-  // Lấy ảnh, kể cả ảnh lazy-load.
-  let imageCandidate =
-    img.attr("data-src") ||
-    img.attr("data-lazy-src") ||
-    img.attr("data-original") ||
-    img.attr("data-large_image") ||
-    img.attr("src") ||
-    "";
+  // Đọc ảnh từ các thuộc tính lazy-load.
+  const imageAttributes = [
+    "data-large_image",
+    "data-src",
+    "data-lazy-src",
+    "data-original",
+    "data-lazy",
+    "data-zoom-image",
+    "src"
+  ];
 
+  let imageCandidate = "";
+
+  for (const attribute of imageAttributes) {
+    const value = img.attr(attribute);
+
+    if (
+      value &&
+      !value.startsWith("data:image")
+    ) {
+      imageCandidate = value;
+      break;
+    }
+  }
+
+  // Nếu chưa có ảnh, lấy từ srcset.
   if (!imageCandidate) {
     const srcset =
       img.attr("data-srcset") ||
@@ -175,16 +224,26 @@ function getProductFromLink($, anchor, pageUrl, category) {
       "";
 
     if (srcset) {
-      imageCandidate = srcset
-        .split(",")[0]
-        .trim()
-        .split(/\s+/)[0];
+      const sources = srcset
+        .split(",")
+        .map(item => item.trim())
+        .filter(Boolean);
+
+      // Ưu tiên ảnh có kích thước lớn nhất.
+      const lastSource = sources[sources.length - 1];
+
+      imageCandidate = lastSource
+        ? lastSource.trim().split(/\s+/)[0]
+        : "";
     }
   }
 
-  const image = absoluteUrl(imageCandidate, pageUrl);
+  const image = absoluteUrl(
+    imageCandidate,
+    pageUrl
+  );
 
-  // Lấy giá sản phẩm.
+  // Lấy giá của đúng sản phẩm.
   const priceElement = card.find(
     ".price ins .amount, " +
     ".price ins, " +
@@ -205,6 +264,7 @@ function getProductFromLink($, anchor, pageUrl, category) {
     categorySlug: category.slug
   };
 }
+
 
 // Chỉ lấy URL Next có thật trong HTML.
 // Không tự tạo /page/2/, /page/3/...
