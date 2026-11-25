@@ -35,6 +35,21 @@ const CATEGORIES = [
     name: "Linh kiện PC",
     slug: "linh-kien-pc",
     url: "https://muicamau.vn/danh-muc/linh-kien-pc/"
+  },
+  {
+    name: "Thiết bị mạng",
+    slug: "thiet-bi-mang",
+    url: "https://muicamau.vn/danh-muc/thiet-bi-mang/"
+  },
+  {
+    name: "Phụ kiện các loại",
+    slug: "phu-kien-cac-loai",
+    url: "https://muicamau.vn/danh-muc/phu-kien-cac-loai/"
+  },
+  {
+    name: "Phần mềm bản quyền",
+    slug: "pm-ban-quyen",
+    url: "https://muicamau.vn/danh-muc/pm-ban-quyen/"
   }
 ];
 
