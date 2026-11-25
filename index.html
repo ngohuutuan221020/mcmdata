@@ -1,207 +1,621 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cào dữ liệu Laptop - Mũi Cà Mau</title>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý sản phẩm - Mũi Cà Mau</title>
+
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: system-ui, -apple-system, sans-serif;
-      max-width: 1200px;
-      margin: 24px auto;
-      padding: 0 16px;
-      background: #f8fafc;
+      margin: 0;
+      padding: 24px;
+      background: #f1f5f9;
       color: #1e293b;
     }
-    .card {
+
+    .container {
+      max-width: 1400px;
+      margin: auto;
+    }
+
+    .header {
+      background: #fff;
+      padding: 22px;
+      border-radius: 12px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+
+    h1 {
+      font-size: 23px;
+      margin: 0 0 6px;
+    }
+
+    .sub {
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(200px, 260px) 1fr auto;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    select,
+    input {
+      width: 100%;
+      padding: 11px 13px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+
+    select:focus,
+    input:focus {
+      border-color: #2563eb;
+    }
+
+    button {
+      padding: 11px 20px;
+      border: 0;
+      border-radius: 8px;
+      background: #2563eb;
+      color: white;
+      font-size: 14px;
+      font-weight: 650;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    button:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    .stats {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .stat {
+      background: #f1f5f9;
+      padding: 10px 16px;
+      border-radius: 8px;
+      min-width: 125px;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 21px;
+      color: #1e293b;
+    }
+
+    .status {
+      margin-top: 14px;
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .category-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .category-tag {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-radius: 20px;
+      padding: 6px 11px;
+      font-size: 12px;
+    }
+
+    .section {
       background: #fff;
       border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.06);
-      margin-bottom: 18px;
+      padding: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
     }
-    h1 { font-size: 21px; margin: 0 0 6px; }
-    .sub { color: #64748b; font-size: 13px; margin-bottom: 16px; }
-    .controls { display: flex; gap: 10px; flex-wrap: wrap; }
-    button {
-      padding: 10px 16px; border: 0; border-radius: 7px;
-      font-size: 14px; font-weight: 650; cursor: pointer;
-      background: #2563eb; color: #fff;
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
     }
-    button:hover { background: #1d4ed8; }
-    button:disabled { background: #94a3b8; cursor: not-allowed; }
-    button.secondary { background: #059669; }
-    button.secondary:hover { background: #047857; }
-    #status { margin-top: 13px; font-size: 14px; color: #475569; }
-    .progress { height: 7px; background: #e2e8f0; border-radius: 20px; overflow: hidden; margin-top: 10px; }
-    #progressBar { height: 100%; width: 0; background: #2563eb; transition: width .2s; }
-    .stats { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
-    .stat { background: #f1f5f9; border-radius: 8px; padding: 9px 13px; font-size: 13px; }
-    .stat strong { font-size: 17px; display: block; }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; background: #fff; font-size: 14px; min-width: 650px; }
-    th, td { padding: 11px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
-    th { background: #f1f5f9; font-weight: 650; white-space: nowrap; }
-    img.thumb { width: 64px; height: 64px; object-fit: contain; border-radius: 5px; background: #fff; }
-    .price { font-weight: 700; color: #dc2626; white-space: nowrap; }
-    a { color: #2563eb; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .muted { color: #64748b; }
-    @media (max-width: 600px) {
-      body { margin: 14px auto; padding: 0 10px; }
-      .card { padding: 15px; }
-      h1 { font-size: 18px; }
-      .controls button { flex: 1; }
+
+    .section-heading h2 {
+      font-size: 17px;
+      margin: 0;
+    }
+
+    .result-count {
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 15px;
+    }
+
+    .product {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+      transition: box-shadow .2s, transform .2s;
+      min-width: 0;
+    }
+
+    .product:hover {
+      box-shadow: 0 5px 16px rgba(0,0,0,.09);
+      transform: translateY(-2px);
+    }
+
+    .product-image {
+      height: 190px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      background: #fff;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .product-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .no-image {
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    .product-info {
+      padding: 13px;
+    }
+
+    .product-category {
+      display: inline-block;
+      background: #eff6ff;
+      color: #2563eb;
+      padding: 4px 8px;
+      border-radius: 5px;
+      font-size: 11px;
+      margin-bottom: 9px;
+    }
+
+    .product-name {
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1.5;
+      min-height: 42px;
+      margin-bottom: 9px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .product-price {
+      color: #dc2626;
+      font-size: 15px;
+      font-weight: 750;
+      margin-bottom: 12px;
+    }
+
+    .product-link {
+      display: block;
+      text-align: center;
+      background: #2563eb;
+      color: #fff;
+      padding: 9px;
+      border-radius: 6px;
+      font-size: 13px;
+      text-decoration: none;
+    }
+
+    .product-link:hover {
+      background: #1d4ed8;
+      text-decoration: none;
+    }
+
+    .empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 55px 15px;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .loading {
+      opacity: .65;
+      pointer-events: none;
+    }
+
+    @media (max-width: 1000px) {
+      .product-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 12px;
+      }
+
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .product-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .product-image {
+        height: 145px;
+      }
+
+      .product-info {
+        padding: 10px;
+      }
+
+      h1 {
+        font-size: 19px;
+      }
+
+      .section {
+        padding: 12px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .product-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
+
 <body>
-  <section class="card">
-    <h1>Lấy danh sách Laptop từ Mũi Cà Mau</h1>
-    <div class="sub">Tự động quét các trang danh mục và xuất danh sách ra Excel.</div>
-    <div class="controls">
-      <button id="btnCrawl" onclick="crawlData()">Lấy toàn bộ dữ liệu</button>
-      <button id="btnExport" class="secondary" onclick="exportExcel()" disabled>Xuất Excel (.xlsx)</button>
-    </div>
-    <div id="status">Sẵn sàng. Nhấn “Lấy toàn bộ dữ liệu” để bắt đầu.</div>
-    <div class="progress"><div id="progressBar"></div></div>
-    <div class="stats">
-      <div class="stat"><strong id="productCount">0</strong>Sản phẩm</div>
-      <div class="stat"><strong id="pageCount">0</strong>Trang đã quét</div>
-    </div>
-  </section>
+  <main class="container">
 
-  <section class="card" style="padding:0; overflow:hidden;">
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:55px;">STT</th>
-            <th style="width:90px;">Hình ảnh</th>
-            <th>Tên sản phẩm</th>
-            <th style="width:160px;">Giá bán</th>
-            <th style="width:100px;">Liên kết</th>
-          </tr>
-        </thead>
-        <tbody id="resultBody">
-          <tr><td colspan="5" class="muted" style="text-align:center;padding:28px;">Chưa có dữ liệu</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+    <section class="header">
+      <h1>MŨI CÀ MAU - QUẢN LÝ SẢN PHẨM</h1>
+      <div class="sub">
+        Tra cứu sản phẩm từ các danh mục trên website Mũi Cà Mau
+      </div>
 
-<script>
-  const API_URL = "/api/laptops";
-  let scrapedProducts = [];
-  let scannedPages = 0;
+      <div class="toolbar">
+        <select id="categorySelect">
+          <option value="all">Tất cả danh mục</option>
+          <option value="laptop">Laptop</option>
+          <option value="pc-may-tinh-de-ban">PC - Máy tính để bàn</option>
+          <option value="camera-quan-sat">Camera quan sát</option>
+          <option value="lcd-man-hinh">LCD - Màn hình</option>
+          <option value="gear">Gear</option>
+          <option value="linh-kien-pc">Linh kiện PC</option>
+        </select>
 
-  async function crawlData() {
-    const btn = document.getElementById("btnCrawl");
-    const exportBtn = document.getElementById("btnExport");
-    const status = document.getElementById("status");
-    const tbody = document.getElementById("resultBody");
+        <input
+          type="search"
+          id="searchInput"
+          placeholder="Tìm kiếm theo tên sản phẩm..."
+          autocomplete="off"
+        >
 
-    btn.disabled = true;
-    exportBtn.disabled = true;
-    scrapedProducts = [];
-    scannedPages = 0;
-    updateStats();
-    setProgress(10);
-    status.textContent = "Đang kết nối máy chủ và quét danh mục Laptop...";
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:28px;">Đang tải dữ liệu...</td></tr>';
+        <button id="btnLoad" onclick="loadProducts()">
+          Tải sản phẩm
+        </button>
+      </div>
 
-    try {
-      const response = await fetch(API_URL, { method: "GET", cache: "no-store" });
-      const result = await response.json().catch(() => ({}));
+      <div class="stats">
+        <div class="stat">
+          <strong id="totalProducts">0</strong>
+          Sản phẩm
+        </div>
 
-      if (!response.ok) {
-        throw new Error(result.error || `Máy chủ trả về HTTP ${response.status}`);
+        <div class="stat">
+          <strong id="totalPages">0</strong>
+          Trang đã quét
+        </div>
+
+        <div class="stat">
+          <strong id="totalCategories">0</strong>
+          Danh mục
+        </div>
+      </div>
+
+      <div id="status" class="status">
+        Sẵn sàng. Chọn danh mục và nhấn Tải sản phẩm.
+      </div>
+
+      <div id="categorySummary" class="category-summary"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <h2>Danh sách sản phẩm</h2>
+        <span id="resultCount" class="result-count">
+          0 kết quả
+        </span>
+      </div>
+
+      <div id="productGrid" class="product-grid">
+        <div class="empty">
+          Chưa có dữ liệu. Hãy chọn danh mục và tải sản phẩm.
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const API_URL = "/api/products";
+
+    let allProducts = [];
+    let isLoading = false;
+
+    const categorySelect =
+      document.getElementById("categorySelect");
+
+    const searchInput =
+      document.getElementById("searchInput");
+
+    const btnLoad =
+      document.getElementById("btnLoad");
+
+    // Tải dữ liệu từ API.
+    async function loadProducts() {
+      if (isLoading) return;
+
+      isLoading = true;
+      btnLoad.disabled = true;
+      btnLoad.textContent = "Đang tải...";
+
+      const grid = document.getElementById("productGrid");
+      const status = document.getElementById("status");
+
+      const category = categorySelect.value;
+
+      allProducts = [];
+
+      updateStats(0, 0, 0);
+
+      grid.innerHTML = `
+        <div class="empty">
+          Đang kết nối máy chủ và quét sản phẩm...
+          <br><br>
+          Quá trình có thể mất một lúc nếu có nhiều sản phẩm.
+        </div>
+      `;
+
+      status.textContent = "Đang quét dữ liệu...";
+
+      try {
+        const response = await fetch(
+          `${API_URL}?category=${encodeURIComponent(category)}`,
+          {
+            method: "GET",
+            cache: "no-store"
+          }
+        );
+
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(
+            result.error ||
+            `Máy chủ trả về HTTP ${response.status}`
+          );
+        }
+
+        if (!result.success) {
+          throw new Error(result.error || "Không thể lấy dữ liệu.");
+        }
+
+        allProducts = Array.isArray(result.products)
+          ? result.products
+          : [];
+
+        updateStats(
+          result.totalProducts || 0,
+          result.totalPages || 0,
+          result.categories ? result.categories.length : 0
+        );
+
+        renderCategorySummary(result.categories || []);
+        filterProducts();
+
+        const errorCount = (result.errors || []).length;
+
+        if (errorCount > 0) {
+          status.textContent =
+            `Đã tải ${allProducts.length} sản phẩm. Có ${errorCount} danh mục gặp lỗi; xem thông tin bên dưới.`;
+        } else {
+          status.textContent =
+            `Hoàn tất! Đã tải ${allProducts.length} sản phẩm từ ${result.totalPages || 0} trang.`;
+        }
+
+      } catch (error) {
+        console.error(error);
+
+        status.textContent = "Lỗi: " + error.message;
+
+        grid.innerHTML = `
+          <div class="empty">
+            ${escapeHtml(error.message)}
+          </div>
+        `;
+
+      } finally {
+        isLoading = false;
+        btnLoad.disabled = false;
+        btnLoad.textContent = "Tải sản phẩm";
+      }
+    }
+
+    // Cập nhật thống kê.
+    function updateStats(products, pages, categories) {
+      document.getElementById("totalProducts").textContent = products;
+      document.getElementById("totalPages").textContent = pages;
+      document.getElementById("totalCategories").textContent = categories;
+    }
+
+    // Hiển thị thống kê từng danh mục.
+    function renderCategorySummary(categories) {
+      const container =
+        document.getElementById("categorySummary");
+
+      container.innerHTML = categories.map(item => `
+        <span class="category-tag">
+          ${escapeHtml(item.name)}: ${item.totalProducts} sản phẩm
+          ${item.error ? "(Có lỗi)" : ""}
+        </span>
+      `).join("");
+    }
+
+    // Tìm kiếm và lọc sản phẩm.
+    function filterProducts() {
+      const keyword = searchInput.value
+        .trim()
+        .toLocaleLowerCase("vi");
+
+      const selectedCategory = categorySelect.value;
+
+      const filtered = allProducts.filter(product => {
+        const matchesName = String(product.name || "")
+          .toLocaleLowerCase("vi")
+          .includes(keyword);
+
+        const matchesCategory =
+          selectedCategory === "all" ||
+          product.categorySlug === selectedCategory;
+
+        return matchesName && matchesCategory;
+      });
+
+      renderProducts(filtered);
+    }
+
+    // Hiển thị danh sách sản phẩm.
+    function renderProducts(products) {
+      const grid = document.getElementById("productGrid");
+
+      document.getElementById("resultCount").textContent =
+        `${products.length} kết quả`;
+
+      if (!products.length) {
+        grid.innerHTML = `
+          <div class="empty">
+            Không tìm thấy sản phẩm phù hợp.
+          </div>
+        `;
+        return;
       }
 
-      scrapedProducts = Array.isArray(result.products) ? result.products : [];
-      scannedPages = Number(result.pagesScanned || 0);
-      renderTable(scrapedProducts);
-      updateStats();
-      setProgress(100);
+      grid.innerHTML = products.map(product => `
+        <article class="product">
+          <div class="product-image">
+            ${
+              product.image
+                ? `
+                  <img
+                    src="${escapeAttribute(product.image)}"
+                    alt="${escapeAttribute(product.name)}"
+                    loading="lazy"
+                    referrerpolicy="no-referrer"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                  >
+                  <span class="no-image" style="display:none;">
+                    Không tải được hình ảnh
+                  </span>
+                `
+                : `<span class="no-image">Chưa có hình ảnh</span>`
+            }
+          </div>
 
-      if (scrapedProducts.length) {
-        status.textContent = `Hoàn tất! Đã lấy ${scrapedProducts.length} sản phẩm từ ${scannedPages} trang.`;
-        exportBtn.disabled = false;
-      } else {
-        status.textContent = "Không tìm thấy sản phẩm. Cấu trúc danh mục có thể đã thay đổi.";
-      }
-    } catch (error) {
-      console.error(error);
-      status.textContent = "Lỗi khi lấy dữ liệu: " + error.message;
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#dc2626;padding:28px;">${escapeHtml(error.message)}</td></tr>`;
-      setProgress(0);
-    } finally {
-      btn.disabled = false;
-    }
-  }
+          <div class="product-info">
+            <span class="product-category">
+              ${escapeHtml(product.category || "")}
+            </span>
 
-  function updateStats() {
-    document.getElementById("productCount").textContent = scrapedProducts.length;
-    document.getElementById("pageCount").textContent = scannedPages;
-  }
+            <div class="product-name">
+              ${escapeHtml(product.name)}
+            </div>
 
-  function setProgress(value) {
-    document.getElementById("progressBar").style.width = `${value}%`;
-  }
+            <div class="product-price">
+              ${escapeHtml(product.price || "Liên hệ")}
+            </div>
 
-  function renderTable(items) {
-    const tbody = document.getElementById("resultBody");
-    if (!items.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:28px;">Không có sản phẩm</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = items.map((item, index) => `
-      <tr>
-        <td>${index + 1}</td>
-        <td>${item.image ? `<img class="thumb" src="${escapeAttribute(item.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : "—"}</td>
-        <td><strong>${escapeHtml(item.name)}</strong></td>
-        <td class="price">${escapeHtml(item.price || "Liên hệ")}</td>
-        <td>${item.link ? `<a href="${escapeAttribute(item.link)}" target="_blank" rel="noopener noreferrer">Xem web</a>` : "—"}</td>
-      </tr>
-    `).join("");
-  }
-
-  function exportExcel() {
-    if (!scrapedProducts.length) return;
-    if (typeof XLSX === "undefined") {
-      alert("Không tải được thư viện Excel. Vui lòng kiểm tra kết nối Internet và tải lại trang.");
-      return;
+            ${
+              product.link
+                ? `
+                  <a
+                    class="product-link"
+                    href="${escapeAttribute(product.link)}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Xem chi tiết
+                  </a>
+                `
+                : ""
+            }
+          </div>
+        </article>
+      `).join("");
     }
 
-    const rows = scrapedProducts.map((p, index) => ({
-      "STT": index + 1,
-      "Tên sản phẩm": p.name,
-      "Giá bán": p.price || "Liên hệ",
-      "Liên kết": p.link,
-      "Hình ảnh": p.image
-    }));
+    // Chống chèn HTML không an toàn.
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]);
+    }
 
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    worksheet["!cols"] = [
-      { wch: 8 }, { wch: 65 }, { wch: 22 }, { wch: 55 }, { wch: 65 }
-    ];
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Danh sách Laptop");
-    XLSX.writeFile(workbook, "danh-sach-laptop-muicamau.xlsx");
-  }
+    function escapeAttribute(value) {
+      return escapeHtml(value);
+    }
 
-  function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>"']/g, char => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-    })[char]);
-  }
+    // Lọc ngay khi nhập từ khóa.
+    searchInput.addEventListener("input", filterProducts);
 
-  function escapeAttribute(value) {
-    return escapeHtml(value);
-  }
-</script>
+    // Khi đổi danh mục, lọc ngay trên dữ liệu đã tải.
+    // Nhấn Tải sản phẩm để quét lại riêng danh mục đó.
+    categorySelect.addEventListener("change", filterProducts);
+
+    // Tự tải tất cả danh mục khi mở trang.
+    loadProducts();
+  </script>
 </body>
 </html>
